@@ -2,48 +2,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
-IM_DIM = 96
-NUM_PIXELS = IM_DIM**2
-
-numImages = 200
-numPoints = 15
+sz = 16
 
 
 def rotate(theta, i, j):
     R = np.array([[np.cos(theta), -np.sin(theta)],
                   [np.sin(theta),  np.cos(theta)]])
-    return np.int64(R @ np.array([i,j]))
+    return R @ np.array([i,j])
 
 
-def firstDerFilters(ss):
-    sz = 16
-    im1 = np.zeros((sz,sz))
-    im2 = np.zeros((sz,sz))
+def firstDerFilter(ss, theta):
+    im = np.zeros((sz,sz))
     mid = sz // 2
     for i in range(-mid,mid):
         for j in range(-mid,mid):
-            im1[i+mid,j+mid] = -j/ss * multivariate_normal.pdf([i,j], np.zeros(2), ss*np.identity(2))
-            im2[i+mid,j+mid] = -i/ss * multivariate_normal.pdf([i,j], np.zeros(2), ss*np.identity(2))
-    return [im1, im2]
+            m,n = rotate(theta, i, j)
+            im[i+mid,j+mid] = -n/ss * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
+    return im / np.sqrt(np.sum(np.square(im)))
 
-def secondDerFilters(ss):
-    sz = 16
-    im1 = np.zeros((sz,sz))
-    im2 = np.zeros((sz,sz))
-    im3 = np.zeros((sz,sz))
+def secondDerFilter(ss, theta):
+    im = np.zeros((sz,sz))
     mid = sz // 2
     for i in range(-mid,mid):
         for j in range(-mid,mid):
-            m,n = i,j
-            im1[i+mid,j+mid] = ((n/ss)**2 - 1/ss) * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
-            m,n = rotate(np.pi/3, m, n)
-            im2[i+mid,j+mid] = ((n/ss)**2 - 1/ss) * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
-            m,n = rotate(np.pi/3, m, n)
-            im3[i+mid,j+mid] = ((n/ss)**2 - 1/ss) * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
-    return im3
+            m,n = rotate(theta, i, j)
+            im[i+mid,j+mid] = ((n/ss)**2 - 1/ss) * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
+    return im / np.sqrt(np.sum(np.square(im)))
 
+def thirdDerFilter(ss, theta):
+    im = np.zeros((sz,sz))
+    mid = sz // 2
+    for i in range(-mid,mid):
+        for j in range(-mid,mid):
+            m,n = rotate(theta, i, j)
+            im[i+mid,j+mid] = (-(n/ss)**3 + 3*n/ss**2) * multivariate_normal.pdf([m, n], np.zeros(2), ss*np.identity(2))
+    return im / np.sqrt(np.sum(np.square(im)))
 
-ims = secondDerFilters(4)
-#for im in ims:
-plt.imshow(ims, cmap='gray')
-plt.show()
+def createFilters():
+    filters = []
+    for ss in [16, 32, 64]:
+        for theta in [0, np.pi/2]:
+            filters.append(firstDerFilter(ss, theta))
+        for theta in [0, np.pi/3, 2*np.pi/3]:
+            filters.append(secondDerFilter(ss, theta))
+        for theta in [0, np.pi/4, 2*np.pi/4, 3*np.pi/4]:
+            filters.append(thirdDerFilter(ss, theta))
+    return np.array(filters).reshape(27, sz, sz)
+
+def visualizeFilters(filters):
+    fig = plt.figure()
+    for i in range(27):
+        plt.subplot(3, 9, i+1)
+        plt.imshow(filters[i], cmap='gray')
+        plt.xticks([])
+        plt.yticks([])
+    plt.show()
+
+#filters = createFilters()
+#visualizeFilters(filters)
