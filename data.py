@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from kruskal import kruskalMST
@@ -10,8 +11,8 @@ numImages = 200
 numPoints = 15
 
 
-def processFacesData():
-    f = open("training.csv", 'r')
+def processFacesData(file):
+    f = open(file, 'r')
     keypoints = np.zeros((numImages, numPoints, 2))
     images = np.zeros((numImages, IM_DIM, IM_DIM))
     np.random.seed(5)
@@ -28,6 +29,21 @@ def processFacesData():
         im = np.float64(im) / 255.0
         images[per[count]] = im
 
+    return keypoints, images
+
+def readFacesData(file='training.csv'):
+    data = pd.read_csv(file)
+    images = data['Image']
+    images = images.apply(lambda x: np.fromstring(x, sep=' '))
+    images = np.vstack(images.values)
+    images = images.reshape(-1, 96, 96)
+    keypoints = data.drop('Image', axis=1).values
+    keypoints = keypoints.reshape(-1, 15, 2)
+    # drop null and zero
+    mask = np.all(np.isnan(keypoints), axis=2)
+    mask = np.any(mask, axis=1)
+    keypoints = keypoints[~mask]
+    images = images[~mask]
     return keypoints, images
 
 
