@@ -44,6 +44,16 @@ def visualizeFaceGraph(keypoints, image, edges):
     plt.plot(keypoints[:, 1], keypoints[:, 0], 'o', color='r')
     plt.show()
 
+def visualizeFaceGraphs(keypoints, images, edges):
+    fig, axarr = plt.subplots(2, 3)
+    for i in range(6):
+        axarr[i//3, i%3].imshow(images[i], cmap = 'gray')
+        axarr[i//3, i%3].set_xticks([])
+        axarr[i//3, i%3].set_yticks([])
+        for j,k in edges:
+            axarr[i//3, i%3].plot([keypoints[i, j, 0], keypoints[i, k, 0]], [keypoints[i, j, 1], keypoints[i, k, 1]], color='lime')
+        axarr[i//3, i%3].plot(keypoints[i, :, 0], keypoints[i, :, 1], 'o', color='r', markersize=4)
+    plt.show()
 
 def calculateEdges(keypoints):
     scores = np.zeros((numPoints, numPoints)) + np.inf
