@@ -4,12 +4,7 @@ from filters import createFilters
 from scipy import ndimage
 np.seterr(divide='ignore')
 
-
-IM_DIM = 96
-NUM_PIXELS = IM_DIM**2
 step = 4
-
-numTrain = 160
 numPoints = 15
 
 
@@ -21,10 +16,10 @@ class FaceTree:
         self.filters = createFilters()
 
 
-    def getGrid(self):
-        x = range(step//2,IM_DIM,step)
-        y = range(step//2,IM_DIM,step)
-        yv, xv = np.meshgrid(x, y)
+    def getGrid(self, im):
+        x = range(step//2, im.shape[0], step)
+        y = range(step//2, im.shape[1], step)
+        yv, xv = np.meshgrid(y, x)
         return np.stack((xv, yv), axis=2).reshape(-1, 2).T
 
 
@@ -61,23 +56,17 @@ class FaceTree:
                 self.spatialMeans[w] = np.mean(diff, axis=0)
                 self.spatialCovs[w] = np.cov(diff.T, bias=True)
 
-        self.absMeans = np.zeros((numPoints, 2))
-        self.absCovs = np.zeros((numPoints, 2, 2))
-        for i in range(numPoints):
-            self.absMeans[i] = np.mean(keypoints[:, i], axis=0)
-            self.absCovs[i] = np.cov(keypoints[:, i].T, bias=True)
-
     
     def filterResponse(self, im):
-        response = np.zeros((IM_DIM, IM_DIM, 27))
+        response = np.zeros((im.shape[0], im.shape[1], 27))
         for i in range(27):
             response[:,:,i] = ndimage.correlate(im, self.filters[i], mode='nearest')
-        return response / np.sqrt(np.sum(np.square(response), axis=2)).reshape(IM_DIM,IM_DIM,1)
+        return response / np.sqrt(np.sum(np.square(response), axis=2)).reshape(im.shape[0],im.shape[1],1)
     
 
     def calculateAppearanceParams(self, keypoints, images):
-        keypointResponses = np.zeros((numTrain, numPoints, 27))
-        for i in range(numTrain):
+        keypointResponses = np.zeros((len(images), numPoints, 27))
+        for i in range(len(images)):
             response = self.filterResponse(images[i])
             for j in range(numPoints):
                 loc = np.int64(keypoints[i, j])
@@ -98,24 +87,20 @@ class FaceTree:
         iconicIndex = response[loc[0], loc[1]]
         return -np.log(multivariate_normal.pdf(iconicIndex, self.appearanceMeans[nodeIndex], self.appearanceCovs[nodeIndex]))
     
-
-    def absoluteCost(self, nodeIndex, loc):
-        return -np.log(multivariate_normal.pdf(loc.T, self.absMeans[nodeIndex], self.absCovs[nodeIndex]))
-    
     
     def findChildLocations(self, response):
-        B = np.zeros((numPoints, IM_DIM, IM_DIM)) + np.inf
-        D = np.zeros((numPoints, IM_DIM, IM_DIM, 2)).astype(np.int64)
-        grid = self.getGrid()
+        B = np.zeros((numPoints, response.shape[0], response.shape[1])) + np.inf
+        D = np.zeros((numPoints, response.shape[0], response.shape[1], 2)).astype(np.int64)
+        grid = self.getGrid(response)
 
         def recurse(v):
             for w in self.tree[v]:
                 recurse(w)
             if v != self.root:
-                for a in range(step//2,IM_DIM,step):
-                    for b in range(step//2,IM_DIM,step):
+                for a in range(step//2,response.shape[0],step):
+                    for b in range(step//2,response.shape[1],step):
                         parentLoc = np.array([a,b])
-                        cost = self.appearanceCost(v, grid, response) + self.deformationCost(v, parentLoc, grid) + self.absoluteCost(v, grid)
+                        cost = self.appearanceCost(v, grid, response) + self.deformationCost(v, parentLoc, grid)
                         for w in self.tree[v]:
                             cost += B[w, grid[0], grid[1]]
                         B[v,a,b] = np.min(cost)
@@ -127,8 +112,8 @@ class FaceTree:
 
     def findRootLocation(self, B, response):
         v = self.root
-        grid = self.getGrid()
-        cost = self.appearanceCost(v, grid, response) + self.absoluteCost(v, grid)
+        grid = self.getGrid(response)
+        cost = self.appearanceCost(v, grid, response)
         for w in self.tree[v]:
             cost += B[w, grid[0], grid[1]]
         return grid[:, np.argmin(cost)]

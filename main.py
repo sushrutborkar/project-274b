@@ -1,13 +1,12 @@
-from data import *
+from data import processFacesData, calculateEdges, visualizeFace, visualizeFaceGraph
 from tree import FaceTree
 
 numImages = 200
 numTrain = 160
 numTest = 40
-numPoints = 15
 
 # load data
-keypoints, images = processFacesData()
+keypoints, images = processFacesData(numImages)
 trainImages = images[:numTrain]
 testImages = images[numTrain:]
 trainKeypoints = keypoints[:numTrain]

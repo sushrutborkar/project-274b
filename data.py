@@ -3,17 +3,13 @@ import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from kruskal import kruskalMST
 
-IM_DIM = 96
-NUM_PIXELS = IM_DIM**2
-
-numImages = 200
 numPoints = 15
 
 
-def processFacesData():
+def processFacesData(numImages):
     f = open("training.csv", 'r')
     keypoints = np.zeros((numImages, numPoints, 2))
-    images = np.zeros((numImages, IM_DIM, IM_DIM))
+    images = np.zeros((numImages, 96, 96))
     np.random.seed(5)
     per = np.random.permutation(numImages)
 
@@ -28,16 +24,22 @@ def processFacesData():
         im = np.float64(im) / 255.0
         images[per[count]] = im
 
+    f.close()
     return keypoints, images
 
 
 def visualizeFace(keypoints, image):
+    plt.axis('off')
     plt.imshow(image, cmap = 'gray')
-    plt.plot(keypoints[:, 1], keypoints[:, 0], 'o', color='r')
+    plt.plot(keypoints[:6, 1], keypoints[:6, 0], 'o', color='r')
+    plt.plot(keypoints[6:10, 1], keypoints[6:10, 0], 'o', color='lime')
+    plt.plot(keypoints[10:11, 1], keypoints[10:11, 0], 'o', color='cyan')
+    plt.plot(keypoints[11:, 1], keypoints[11:, 0], 'o', color='magenta')
     plt.show()
 
 
 def visualizeFaceGraph(keypoints, image, edges):
+    plt.axis('off')
     plt.imshow(image, cmap = 'gray')
     for i,j in edges:
         plt.plot([keypoints[i, 1], keypoints[j, 1]], [keypoints[i, 0], keypoints[j, 0]], color='lime')
