@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from kruskal import kruskalMST
@@ -28,6 +29,22 @@ def processFacesData(numImages):
     return keypoints, images
 
 
+def readFacesData(file='training.csv'):
+    data = pd.read_csv(file)
+    images = data['Image']
+    images = images.apply(lambda x: np.fromstring(x, sep=' '))
+    images = np.vstack(images.values)
+    images = images.reshape(-1, 96, 96)
+    keypoints = data.drop('Image', axis=1).values
+    keypoints = keypoints.reshape(-1, 15, 2)
+    # drop null and zero
+    mask = np.all(np.isnan(keypoints), axis=2)
+    mask = np.any(mask, axis=1)
+    keypoints = np.flip(keypoints[~mask], axis=2)
+    images = images[~mask] / 255.0
+    return keypoints, images
+
+
 def visualizeFace(keypoints, image):
     plt.axis('off')
     plt.imshow(image, cmap = 'gray')
@@ -44,6 +61,18 @@ def visualizeFaceGraph(keypoints, image, edges):
     for i,j in edges:
         plt.plot([keypoints[i, 1], keypoints[j, 1]], [keypoints[i, 0], keypoints[j, 0]], color='lime')
     plt.plot(keypoints[:, 1], keypoints[:, 0], 'o', color='r')
+    plt.show()
+
+
+def visualizeFaceGraphs(keypoints, images, edges):
+    fig, axarr = plt.subplots(2, 3)
+    for i in range(6):
+        axarr[i//3, i%3].imshow(images[i], cmap = 'gray')
+        axarr[i//3, i%3].set_xticks([])
+        axarr[i//3, i%3].set_yticks([])
+        for j,k in edges:
+            axarr[i//3, i%3].plot([keypoints[i, j, 1], keypoints[i, k, 1]], [keypoints[i, j, 0], keypoints[i, k, 0]], color='lime')
+        axarr[i//3, i%3].plot(keypoints[i, :, 1], keypoints[i, :, 0], 'o', color='r', markersize=4)
     plt.show()
 
 
