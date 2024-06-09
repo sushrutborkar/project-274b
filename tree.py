@@ -144,3 +144,12 @@ class FaceTree:
         locations = self.backtrack(rootLoc, D)
         return locations
     
+    def evaluate(self, images, keypoints):
+        nums = images.shape[0]
+        print("Evaluating on", nums, "images")
+        error = []
+        for i in tqdm(range(nums)):
+            locations = self.predict(images[i])
+            error.append(locations - keypoints[i])
+        
+        return np.mean(error)
