@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from kruskal import kruskalMST
 
-numPoints = 15
+from tree_faster import numPoints
 
 
 def processFacesData(numImages):
@@ -72,7 +72,7 @@ def visualizeFaceGraphs(keypoints, images, edges):
         axarr[i//3, i%3].set_yticks([])
         for j,k in edges:
             axarr[i//3, i%3].plot([keypoints[i, j, 1], keypoints[i, k, 1]], [keypoints[i, j, 0], keypoints[i, k, 0]], color='lime')
-        axarr[i//3, i%3].plot(keypoints[i, :, 1], keypoints[i, :, 0], 'o', color='r', markersize=4)
+        axarr[i//3, i%3].plot(keypoints[i, :, 1], keypoints[i, :, 0], 'o', color='r', markersize=3)
     plt.show()
 
 

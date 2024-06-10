@@ -1,5 +1,6 @@
 # Code in this file is copied from online
 # Source : www.geeksforgeeks.org/kruskals-algorithm-simple-implementation-for-adjacency-matrix/
+from tree_faster import numPoints
 
 def find(i, parent):
     while parent[i] != i:
@@ -19,7 +20,7 @@ def union(i, j, parent):
 def kruskalMST(cost):
     edges = []
 
-    V = 15
+    V = numPoints
     parent = [i for i in range(V)]
     INF = float('inf')
 

@@ -2,6 +2,8 @@ import numpy as np
 from scipy.stats import multivariate_normal
 from filters import createFilters
 from scipy import ndimage
+from tqdm import tqdm
+
 np.seterr(divide='ignore')
 
 step = 4
@@ -78,7 +80,6 @@ class FaceTree:
         for i in range(numPoints):
             self.appearanceCovs[i] = variances[i] * np.identity(27)
 
-
     def deformationCost(self, edgeIndex, loc1, loc2):
         return -np.log(multivariate_normal.pdf(loc1-loc2.T, self.spatialMeans[edgeIndex], self.spatialCovs[edgeIndex]))
 
@@ -152,4 +153,4 @@ class FaceTree:
             locations = self.predict(images[i])
             error.append(locations - keypoints[i])
         
-        return np.mean(error)
+        return error
