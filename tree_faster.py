@@ -8,7 +8,7 @@ import multiprocessing as mp
 np.seterr(divide='ignore')
 
 step = 4
-numPoints = 5
+numPoints = 15
 
 class FaceTree:
     def __init__(self, edges, root):
@@ -157,3 +157,14 @@ class FaceTree:
         image, keypoint = args
         locations = self.predict(image)
         return locations - keypoint
+    
+    def saveWeights(self, filename):
+        np.savez(filename, sm=self.spatialMeans, sc=self.spatialCovs, am=self.appearanceMeans, ac=self.appearanceCovs)
+
+    def loadWeights(self, filename):
+        file = np.load(filename)
+        self.spatialMeans = file['sm']
+        self.spatialCovs = file['sc']
+        self.appearanceMeans = file['am']
+        self.appearanceCovs = file['ac']
+
